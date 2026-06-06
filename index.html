@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mundial 2026 — Simulador</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#0d0d0d;--surface:#161616;--surface2:#1e1e1e;--border:#2a2a2a;--border2:#333;--text:#f0f0f0;--muted:#888;--accent:#c8f135;--accent2:#a8d120}
@@ -835,23 +836,21 @@ function sharePrediccion() {
     { key:'final', name:'Final' },
   ];
 
-  let html = `<div class="print-title">🏆 Mi predicción — Mundial 2026</div>
-    <div class="print-sub" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:20px">dbouzada.github.io/mundial-2026</div>`;
-
+  let cardsHtml = '';
   let hasData = false;
   rounds.forEach(round => {
     const matches = bracketState[round.key].filter(m => m.teamA !== 'TBD' || m.teamB !== 'TBD');
     if (!matches.length) return;
     hasData = true;
-    html += `<div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px">${round.name}</div>`;
+    cardsHtml += '<div style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin:16px 0 8px">' + round.name + '</div>';
     matches.forEach(m => {
-      const wA = m.winner===m.teamA ? 'font-weight:600;color:var(--accent)' : 'color:var(--muted)';
-      const wB = m.winner===m.teamB ? 'font-weight:600;color:var(--accent)' : 'color:var(--muted)';
-      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:3px;margin-bottom:6px;font-size:13px">
-        <span style="${wA}">${m.teamA}</span>
-        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${m.scoreA!==null?m.scoreA+' — '+m.scoreB:'vs'}</span>
-        <span style="${wB}">${m.teamB}</span>
-      </div>`;
+      const wA = m.winner===m.teamA ? 'font-weight:600;color:#c8f135' : 'color:#888';
+      const wB = m.winner===m.teamB ? 'font-weight:600;color:#c8f135' : 'color:#888';
+      cardsHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#1e1e1e;border-radius:3px;margin-bottom:6px;font-size:13px;font-family:DM Sans,sans-serif">' +
+        '<span style="' + wA + '">' + m.teamA + '</span>' +
+        '<span style="font-family:DM Mono,monospace;font-size:11px;color:#888">' + (m.scoreA!==null?m.scoreA+' — '+m.scoreB:'vs') + '</span>' +
+        '<span style="' + wB + '">' + m.teamB + '</span>' +
+      '</div>';
     });
   });
 
@@ -860,14 +859,7 @@ function sharePrediccion() {
     return;
   }
 
-  document.getElementById('shareContent').innerHTML = html;
-
-  // Also set print area
-  document.getElementById('printArea').innerHTML = `
-    <div class="print-title">Mi predicción — Mundial 2026</div>
-    <div class="print-sub">dbouzada.github.io/mundial-2026</div>
-    ${html}`;
-
+  document.getElementById('shareContent').innerHTML = cardsHtml;
   document.getElementById('shareOverlay').classList.add('open');
 }
 
@@ -875,28 +867,110 @@ function closeShare() {
   document.getElementById('shareOverlay').classList.remove('open');
 }
 
-function printPrediccion() {
-  window.print();
+// Generate the printable card for image capture
+function buildShareCard() {
+  const rounds = [
+    { key:'sf',    name:'Semifinales' },
+    { key:'final', name:'Final' },
+  ];
+  let inner = '';
+  rounds.forEach(round => {
+    const matches = bracketState[round.key].filter(m => m.teamA !== 'TBD' || m.teamB !== 'TBD');
+    if (!matches.length) return;
+    inner += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#888;margin:20px 0 10px">' + round.name + '</div>';
+    matches.forEach(m => {
+      const wA = m.winner===m.teamA ? 'font-weight:600;color:#c8f135' : 'color:#bbb';
+      const wB = m.winner===m.teamB ? 'font-weight:600;color:#c8f135' : 'color:#bbb';
+      inner += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#1e1e1e;border-radius:4px;margin-bottom:8px;font-size:15px;font-family:DM Sans,sans-serif;border:1px solid #2a2a2a">' +
+        '<span style="' + wA + '">' + m.teamA + '</span>' +
+        '<span style="font-family:DM Mono,monospace;font-size:13px;color:#888">' + (m.scoreA!==null?m.scoreA+' — '+m.scoreB:'vs') + '</span>' +
+        '<span style="' + wB + '">' + m.teamB + '</span>' +
+      '</div>';
+    });
+  });
+
+  const champion = bracketState.final[0].winner;
+  const championHtml = champion 
+    ? '<div style="margin-top:24px;padding:20px;background:linear-gradient(135deg,rgba(200,241,53,.15),rgba(200,241,53,.05));border:1px solid #c8f135;border-radius:6px;text-align:center"><div style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#888;margin-bottom:8px">🏆 Campeón</div><div style="font-family:DM Serif Display,serif;font-size:32px;color:#c8f135">' + champion + '</div></div>'
+    : '';
+
+  return '<div style="background:#0d0d0d;color:#f0f0f0;padding:40px;font-family:DM Sans,sans-serif;width:560px">' +
+    '<div style="font-family:DM Serif Display,serif;font-size:28px;color:#fff;margin-bottom:4px;letter-spacing:-.5px">Mi predicción — <span style="color:#c8f135">Mundial 2026</span></div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:10px;color:#888;letter-spacing:.1em;margin-bottom:12px">SEMIFINALES · FINAL</div>' +
+    inner +
+    championHtml +
+    '<div style="margin-top:24px;padding-top:16px;border-top:1px solid #2a2a2a;display:flex;justify-content:space-between;align-items:center;font-family:DM Mono,monospace;font-size:10px;color:#888;letter-spacing:.05em">' +
+      '<span>by Diego Bouzada</span>' +
+      '<span>dbouzada.github.io/mundial-2026</span>' +
+    '</div>' +
+  '</div>';
 }
 
-function copyPrediccion() {
+async function downloadImage() {
+  showToast('Generando imagen...');
+  // Create offscreen container
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1';
+  wrap.innerHTML = buildShareCard();
+  document.body.appendChild(wrap);
+  try {
+    const canvas = await html2canvas(wrap.firstChild, {
+      backgroundColor: '#0d0d0d',
+      scale: 2,
+      logging: false,
+    });
+    const link = document.createElement('a');
+    link.download = 'mundial-2026-prediccion.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('¡Imagen descargada!');
+  } catch(e) {
+    showToast('Error generando imagen');
+    console.error(e);
+  } finally {
+    document.body.removeChild(wrap);
+  }
+}
+
+function buildShareText() {
   const rounds = [
     { key:'sf', name:'Semifinales' },
     { key:'final', name:'Final' },
   ];
-  const lines = ['🏆 Mi predicción — Mundial 2026', ''];
+  const lines = ['🏆 Mi predicción del Mundial 2026', ''];
   rounds.forEach(round => {
     const matches = bracketState[round.key].filter(m => m.teamA!=='TBD');
     if (!matches.length) return;
     lines.push(round.name.toUpperCase());
     matches.forEach(m => {
-      const score = m.scoreA!==null ? `${m.scoreA}-${m.scoreB}` : 'vs';
-      lines.push(`${m.teamA} ${score} ${m.teamB}${m.winner?' → '+m.winner:''}`);
+      const score = m.scoreA!==null ? m.scoreA + '-' + m.scoreB : 'vs';
+      lines.push(m.teamA + ' ' + score + ' ' + m.teamB + (m.winner?' → '+m.winner:''));
     });
     lines.push('');
   });
-  lines.push('🔗 dbouzada.github.io/mundial-2026');
-  const text = lines.join('\n');
+  const champion = bracketState.final[0].winner;
+  if (champion) lines.push('🥇 Campeón: ' + champion, '');
+  lines.push('🔗 Simulá la tuya: https://dbouzada.github.io/mundial-2026');
+  return lines.join('\n');
+}
+
+function shareTwitter() {
+  const text = encodeURIComponent(buildShareText());
+  window.open('https://twitter.com/intent/tweet?text=' + text, '_blank');
+}
+
+function shareWhatsApp() {
+  const text = encodeURIComponent(buildShareText());
+  window.open('https://wa.me/?text=' + text, '_blank');
+}
+
+function shareLinkedIn() {
+  const url = encodeURIComponent('https://dbouzada.github.io/mundial-2026');
+  window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + url, '_blank');
+}
+
+function copyPrediccion() {
+  const text = buildShareText();
   navigator.clipboard.writeText(text).then(() => showToast('¡Copiado al portapapeles!')).catch(() => {
     const ta = document.createElement('textarea');
     ta.value = text; document.body.appendChild(ta); ta.select();
@@ -906,21 +980,27 @@ function copyPrediccion() {
 }
 
 // SHARE MODAL HTML (injected)
-document.body.insertAdjacentHTML('beforeend', `
-<div class="modal-overlay" id="shareOverlay" onclick="if(event.target===this)closeShare()">
-  <div class="modal" style="max-width:520px">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
-      <div><div class="modal-title">Mi predicción</div><div class="modal-sub">Semis · Final — Mundial 2026</div></div>
-      <button onclick="closeShare()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">×</button>
-    </div>
-    <div id="shareContent" style="margin-bottom:20px"></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn-primary" onclick="printPrediccion()">Imprimir / PDF</button>
-      <button class="btn-secondary" onclick="copyPrediccion()">Copiar texto</button>
-      <button class="btn-secondary" onclick="closeShare()">Cerrar</button>
-    </div>
-  </div>
-</div>`);
+document.body.insertAdjacentHTML('beforeend',
+'<div class="modal-overlay" id="shareOverlay" onclick="if(event.target===this)closeShare()">' +
+  '<div class="modal" style="max-width:560px">' +
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">' +
+      '<div><div class="modal-title">Compartir mi predicción</div><div class="modal-sub">Semis · Final — Mundial 2026</div></div>' +
+      '<button onclick="closeShare()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">×</button>' +
+    '</div>' +
+    '<div id="shareContent" style="margin-bottom:20px;max-height:280px;overflow-y:auto"></div>' +
+    '<div style="border-top:1px solid var(--border);padding-top:16px">' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Compartir como imagen</div>' +
+      '<button class="btn-primary" onclick="downloadImage()" style="margin-bottom:14px">📥 Descargar imagen PNG</button>' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Compartir directo</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button class="btn-secondary" onclick="shareTwitter()">𝕏 Twitter</button>' +
+        '<button class="btn-secondary" onclick="shareWhatsApp()">WhatsApp</button>' +
+        '<button class="btn-secondary" onclick="shareLinkedIn()">LinkedIn</button>' +
+        '<button class="btn-secondary" onclick="copyPrediccion()">Copiar texto</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>' +
+'</div>');
 
 // ============================================================
 // PREDICTOR
