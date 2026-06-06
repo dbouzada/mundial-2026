@@ -64,7 +64,7 @@ main{padding:40px;max-width:1100px;margin:0 auto}
 .btn-primary:hover{background:var(--accent2)}
 /* BRACKET */
 .bracket-container{overflow-x:auto;padding-bottom:20px}
-.bracket{display:flex;min-width:900px}
+.bracket{display:flex;min-width:1200px}
 .round{display:flex;flex-direction:column;flex:1}
 .round-header{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 12px 16px;text-align:center}
 .round-matches{display:flex;flex-direction:column;justify-content:space-around;flex:1;padding:0 8px;gap:12px}
@@ -1050,7 +1050,10 @@ function loadState() {
         if (groupState[g.id].matches[i]) { groupState[g.id].matches[i].sa=s.sa; groupState[g.id].matches[i].sb=s.sb; }
       });
     });
-    if (data.bracket) bracketState = data.bracket;
+    // Only restore bracket if it has the new structure (r16, r8, qf, sf, final)
+    if (data.bracket && data.bracket.r16 && data.bracket.r8 && data.bracket.qf && data.bracket.sf && data.bracket.final) {
+      bracketState = data.bracket;
+    }
     return true;
   } catch(e) { return false; }
 }
